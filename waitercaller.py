@@ -1,12 +1,15 @@
 import datetime
+import config
 from flask import Flask, redirect, render_template, request, url_for, flash
 from flask_login import current_user, LoginManager, login_required, login_user, logout_user
-from mockdbhelper import MockDBHelper as DBHelper
+#if congif.test:
+#    from mockdbhelper import MockDBHelper as DBHelper
+#else:
+from dbhelper import DBHelper
 from passwordhelper import PasswordHelper
 from bitlyhelper import BitlyHelper
 from user import User
 from forms import RegistrationForm, LoginForm, CreateTableForm
-import config
 
 app = Flask(__name__)
 login_manager = LoginManager(app)
@@ -86,7 +89,7 @@ def account_createtable():
     form = CreateTableForm(request.form)
     if form.validate():
         tableid = DB.add_table(form.tablenumber.data, current_user.get_id())
-        new_url = BH.shorten_url(config.base_url + "newrequest/" + tableid)
+        new_url = BH.shorten_url(config.base_url + "newrequest/" + str(tableid))
         DB.update_table(tableid, new_url)
         return redirect(url_for('account'))
     return render_template("account.html", createtableform=form, tables=DB.get_tables(current_user.get_id()))
