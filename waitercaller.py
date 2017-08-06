@@ -1,5 +1,6 @@
 import datetime
-import config
+import config, socket
+
 from flask import Flask, redirect, render_template, request, url_for, flash
 from flask_login import current_user, LoginManager, login_required, login_user, logout_user
 #if congif.test:
@@ -53,17 +54,16 @@ def logout():
 @app.route("/register", methods=['POST'])    
 def register():
     form = RegistrationForm(request.form)
-    if form.validate():
+    if form.validate_on_submit():
         if DB.get_user(form.email.data):
             form.email.errors.append("Email address already registered")
             return render_template('home.html', registrationform=form, loginform=LoginForm())
         
         salt = PH.get_salt()
         hashed = PH.get_hash(form.password2.data + salt)
-        DB.add_user(form.email.data, salt, hashed)
-        return render_template('home.html', registrationform=form, 
-                                            onloadmessage="Registration Successful. Please log in.",
-                                            loginform=LoginForm())
+        ip = socket.gethostbyname(socket.gethostname())
+        DB.add_user(form.email.data, salt, hashed, ip)
+        return redirect(url_for('home'))
     return render_template('home.html', registrationform=form, loginform=LoginForm())
 
 
@@ -103,8 +103,9 @@ def account_deletetable():
 
 @app.route("/newrequest/<tid>")
 def new_request(tid):
-    DB.add_request(tid, datetime.datetime.now())
-    return "Your request has been logged and a waiter will be with you shortly."
+    if DB.add_request(tid, datetime.datetime.now()):
+        return render_template('register.html', info="Made", msg="Your request has been made. A waiter will be with you shortly.")
+    return render_template('register.html', info="Denied", msg="There is already a request pending for this table. Please be patient, a waiter will be there ASAP.")
 
 @app.route("/dashboard/resolve")
 def dashboard_resolve():
