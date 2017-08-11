@@ -17,8 +17,8 @@
           <form class="navbar-form navbar-right" action="/login" method="POST">
             {% if loginform.errors %}
               <ul class="errors">
-                {% for field_name, field_errors in logninform.errors|dictsort if field_errors %}
-                  {% for error in errors %}
+                {% for field_name, field_errors in loginform.errors|dictsort if field_errors %}
+                  {% for error in field_errors %}
                     <li>{{ error }}</li>
                   {% endfor %}
                 {% endfor %}

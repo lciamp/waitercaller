@@ -55,14 +55,3 @@ class DBHelper:
         self.db.requests.remove({"_id": ObjectId(request_id)})
 
 
-
-
-
-
-
-
-
-
-
-
-

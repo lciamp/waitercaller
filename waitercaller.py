@@ -3,14 +3,15 @@ import config, socket
 
 from flask import Flask, redirect, render_template, request, url_for, flash
 from flask_login import current_user, LoginManager, login_required, login_user, logout_user
-#if congif.test:
-#    from mockdbhelper import MockDBHelper as DBHelper
-#else:
-from dbhelper import DBHelper
+if config.test:
+    from mockdbhelper import MockDBHelper as DBHelper
+else:
+    from dbhelper import DBHelper
 from passwordhelper import PasswordHelper
 from bitlyhelper import BitlyHelper
 from user import User
 from forms import RegistrationForm, LoginForm, CreateTableForm
+
 
 app = Flask(__name__)
 login_manager = LoginManager(app)
@@ -54,7 +55,7 @@ def logout():
 @app.route("/register", methods=['POST'])    
 def register():
     form = RegistrationForm(request.form)
-    if form.validate_on_submit():
+    if form.validate():
         if DB.get_user(form.email.data):
             form.email.errors.append("Email address already registered")
             return render_template('home.html', registrationform=form, loginform=LoginForm())
@@ -65,7 +66,6 @@ def register():
         DB.add_user(form.email.data, salt, hashed, ip)
         return redirect(url_for('home'))
     return render_template('home.html', registrationform=form, loginform=LoginForm())
-
 
 @app.route("/dashboard")
 @login_required
@@ -107,11 +107,22 @@ def new_request(tid):
         return render_template('register.html', info="Made", msg="Your request has been made. A waiter will be with you shortly.")
     return render_template('register.html', info="Denied", msg="There is already a request pending for this table. Please be patient, a waiter will be there ASAP.")
 
+
 @app.route("/dashboard/resolve")
 def dashboard_resolve():
     request_id = request.args.get("request_id")
     DB.delete_request(request_id)
     return redirect(url_for('dashboard'))
+
+# ERRORS
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('error.html', error="File Not Found"), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('error.html', error="Internal Server Error"), 500
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
